@@ -12,70 +12,50 @@ class ImageController extends Controller
 {
     //not done yet.
     use ImageTrait;
+
+    public function createImage(Request $request)
+    {
+        $chapter = Image::create([
+            'name'         => $request->name,
+            'type'         => $request->type,
+            'path'         => $request->path,
+            'size'         => $request->size,
+            'challenge_id' => $request->challenge_id
+        ]);
+        
+        return response()->json([
+            "message" => "Chapter " . $request->name . " successfully created."
+        ]);
+    }
     
-    public function index()
+    public function updateImage(Request $request)
+    {
+        $chapter = Image::updateOrCreate(
+            [
+                'id' => $request->id,
+                'challenge_id' => $request->challenge_id
+            ],
+            [
+                'name'         => $request->name,
+                'type'         => $request->type,
+                'path'         => $request->path,
+                'size'         => $request->size,
+            ]
+        );
+
+        return response()->json([
+            "message" => "Chapter " . $request->name . " successfully updated."
+        ]);
+    }
+    
+    public function getAllImage()
     {
         return Image::all();
     }
-
-    public function store(Request $request)
-    {
-        $validatedData = $request->validate([
-         'image' => 'required|image|mimes:jpg,png,jpeg,svg|max:2048',
-        ]);
-        
-        if (!$validatedData) {
-            return response()->json([
-                'message' => 'Data must be (jpg,png,jpeg,svg).'
-            ]);
-        }
-
-        if($image = $request->file('image')) {
-            $imageData = $this->uploads($image);
-            $image = Image::updateOrCreate(
-                        [
-                           'name' => $imageData['imageName'],
-                           'challenge_id' => $request->challenge_id,
-                        ],
-                        [
-                           'type' => $imageData['imageType'],
-                           'path' => $imageData['imagePath'],
-                           'size' => $imageData['imageSize']
-                        ]
-                    );
-                    return $image;
-        }
-        return response()->json([
-            "success" => false,
-            "message" => "test fail"
-        ]);
-    }
     
-    public function show(Request $request)
+    public function getImage(Request $request)
     {
-        $challenge = Challenge::where('name', $request->name);
-        if ($challenge->exists()) {
-            return Challenge::where('name', $request->name)->first();
-        }
-
-        return response()->json([
-            "message" => "Challenge " . $request->name . " not found."
-        ]);
-    }
-    
-    public function destroy(Request $request)
-    {
-        $image = Image::where('name', $request->name);
-        if ($image->exists()) {
-            $image->delete();
-            return response()->json([
-                "message" => "Image " . $request->name . " successfully deleted."
-            ]);
-        }
-
-        return response()->json([
-            "message" => "Image " . $request->name . " not found."
-        ]);
+        return Image::findOrFail($request->id);
     }
 
     public function compare(Request $request)

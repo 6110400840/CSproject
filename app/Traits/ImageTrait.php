@@ -8,15 +8,16 @@ trait ImageTrait {
     {
         if($image) {
             
-            $image_name  = $image->getClientOriginalName();
-            $image_path  = $image->storeAs('challenges/'.$name, $image_name, 'public');
-            $image_size  = $this->imageSize($image);
+            $image_type = $image->getClientOriginalExtension();
+            $image_name = $name.'.'.$image_type;
+            $image_path = $image->storeAs('challenges/'.$name, $image_name, 'public');
+            $image_size = $this->imageSize($image);
 
             return $image = [
-                'imageName' => $image_name,
-                'imageType' => $image_type,
-                'imagePath' => $image_path,
-                'imageSize' => $image_size
+                'name' => $image_name,
+                'type' => $image_type,
+                'path' => $image_path,
+                'size' => $image_size
             ];
         }
     }

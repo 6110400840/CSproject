@@ -11,6 +11,7 @@ class Image extends Model
     use HasFactory;
     use SoftDeletes;
 
+    protected $dates = ['deleted_at'];
     protected $fillable = ['id', 'name', 'type', 'path', 'size', 'challenge_id'];
 
     public function challenge()

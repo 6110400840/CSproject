@@ -11,7 +11,63 @@ use Illuminate\Http\Request;
 class ChallengeController extends Controller
 {
     use ImageTrait;
+
+    public function createChallenge(Request $request)
+    {
+        $json_data = json_decode($request->json);
+        $fileData = $this->uploads($request->file('image'), $json_data->name);
+        $json_fileData = json_decode(json_encode($fileData));
+
+        $challenge = Challenge::create([
+            'name'        => $json_data->name,
+            'description' => $json_data->description,
+            'hint'        => $json_data->hint,
+            'chapter_id'  => $json_data->chapter_id
+        ]);
+
+        if ($fileData) {
+
+            $image = Image::create([
+                'name'         => $json_fileData->name,
+                'type'         => $json_fileData->type,
+                'path'         => $json_fileData->path,
+                'size'         => $json_fileData->size,
+                'challenge_id' => $challenge->id
+            ]);
+
+            return response()->json([
+                "success" => true,
+                "message" => "Challenge create succesfully."
+            ]);
+        }
+
+        return response()->json([
+            "success" => false,
+            "message" => "Challenge created fail."
+        ]);
+        
+        return response()->json([
+            "message" => "Chapter " . $request->name . " successfully created."
+        ]);
+    }
     
+    public function updateChallenge(Request $request)
+    {
+        $chapter = Challenge::updateOrCreate(
+            ['id' => $request->id],
+            [
+                'name'        => $request->name,
+                'description' => $request->description,
+                'hint'        => $request->hint,
+                'chapter_id'  => $request->chapter_id
+            ]
+        );
+
+        return response()->json([
+            "message" => "Chapter " . $request->id . " successfully updated."
+        ]);
+    }
+
     public function getAllChallenge()
     {
         return Challenge::all();
@@ -19,67 +75,61 @@ class ChallengeController extends Controller
     
     public function getChallenge(Request $request)
     {
-        return Challenge::find($request->id);
+        return Challenge::findOrFail($request->id);
     }
     
-    public function imageStore(Request $request)
+    public function deleteChallenge(Request $request)
     {
-        //store image to app.
-        //not done yet.
-        $validatedData = $request->validate([
-         'image' => 'required|image|mimes:jpg,png,jpeg,svg|max:2048',
-        ]);
-        
-        if (!$validatedData) {
-            return response()->json([
-                'message' => 'Data must be (jpg,png,jpeg,svg).'
-            ]);
-        }
-
-        if($fileData = $this->uploads($request->file('image'), $request->name)) {
-            return response()->json([
-                "success" => true,
-                "message" => "test succesfully"
-            ]);
-        }
-        return response()->json([
-            "success" => false,
-            "message" => "test fail"
-        ]);
-    }
-    
-    public function show(Request $request)
-    {
-        $challenge = Challenge::where('name', $request->name);
+        $challenge = Challenge::findOrFail($request->id);
         if ($challenge->exists()) {
-            return Challenge::where('name', $request->name)->first();
-        }
-
-        return response()->json([
-            "message" => "Challenge " . $request->name . " not found."
-        ]);
-    }
-    
-    public function destroy(Request $request)
-    {
-        $challenge = Challenge::where('name', $request->name);
-        if ($challenge->exists()) {
+            $challenge->image->delete();
             $challenge->delete();
             return response()->json([
-                "message" => "Challenge " . $request->name . " successfully deleted."
+                "message" => "Challenge " . $request->id . " successfully deleted."
             ]);
         }
 
         return response()->json([
-            "message" => "Challenge " . $request->name . " not found."
+            "message" => "Challenge  " . $request->id . " not found."
         ]);
     }
+    
+    public function getDeletedChallenges()
+    {
+        return Challenge::onlyTrashed()->get();
+    }
+    
+    public function getDeletedChallenge(Request $request)
+    {
+        return Challenge::withTrashed()->find($request->id)->get();
+    }
+    
+    public function deletedChallengesRestore()
+    {
+        return Challenge::withTrashed()->restore();
+    }
+    
+    public function deletedChallengeRestore(Request $request)
+    {
+        return Challenge::withTrashed()->find($request->id)->restore();
+    }
+    
+    public function permanentDeleteChallenges()
+    {
+        return Challenge::withTrashed()->forceDelete();
+    }
+    
+    public function permanentDeleteChallenge(Request $request)
+    {
+        return Challenge::withTrashed()->find($request->id)->forceDelete();
+    }
 
-    public function test(Request $request)
+    public function imageCompare(Request $request)
     {
         $validatedData = $request->validate([
             'image' => 'required|image|mimes:jpg,png,jpeg,svg|max:2048',
         ]);
+
         $name = $request->file('image')->getClientOriginalName();
         $path = storage_path().'/app/public/images/cat.png';
         
@@ -97,31 +147,6 @@ class ChallengeController extends Controller
         return response()->json([
             "success" => true,
             "message" => "test Successfully"
-        ]);
-    }
-
-    public function test2(Request $request)
-    {
-        //store image to app
-        $validatedData = $request->validate([
-         'image' => 'required|image|mimes:jpg,png,jpeg,svg|max:2048',
-        ]);
-        
-        if (!$validatedData) {
-            return response()->json([
-                'message' => 'Data must be (jpg,png,jpeg,svg).'
-            ]);
-        }
-
-        if($fileData = $this->uploads($request->file('image'), $request->name)) {
-            return response()->json([
-                "success" => true,
-                "message" => "test succesfully"
-            ]);
-        }
-        return response()->json([
-            "success" => false,
-            "message" => "test fail"
         ]);
     }
 }
